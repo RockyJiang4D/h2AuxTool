@@ -122,3 +122,4 @@ int Ch2AuxToolApp::ExitInstance()
 
 	return CWinApp::ExitInstance();
 }
+

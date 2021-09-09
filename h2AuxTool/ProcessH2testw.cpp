@@ -12,8 +12,28 @@ CProcessH2testw::~CProcessH2testw()
 
 }
 
+void CProcessH2testw::PerformH2RW(DWORD dwMBytes, TCHAR driveLetter)
+{
+	CString szTotalCapacity;
+	DWORD dwRwCapacity;
+	CString szFileSystem;
+
+	if (IsValidUsbDrive(driveLetter))
+	{
+		dwRwCapacity = CalcuteRwCapacity(driveLetter, dwMBytes, szTotalCapacity);
+		szFileSystem = GetFileSystem(driveLetter);
+		StartH2testw(driveLetter, szFileSystem, szTotalCapacity, dwRwCapacity);
+		m_nRunh2Count++;
+	}
+}
+
 void CProcessH2testw::PerformH2RW(DWORD dwMBytes)
 {
+	CString szTotalCapacity;
+	DWORD dwRwCapacity;
+	CString szFileSystem;
+	TCHAR driveLetter;
+
 	DWORD dwDrives = GetLogicalDrives();
 	DWORD dwMask = 1;
 
@@ -21,21 +41,18 @@ void CProcessH2testw::PerformH2RW(DWORD dwMBytes)
 	{
 		if (dwDrives & dwMask)
 		{
-			TCHAR driveLetter = 'A' + i;
+			driveLetter = 'A' + i;
 
 			if (IsValidUsbDrive(driveLetter))
 			{
-				CString szTotalCapacity;
-				DWORD dwRwCapacity = CalcuteRwCapacity(driveLetter, dwMBytes, szTotalCapacity);
-				CString szFileSystem = GetFileSystem(driveLetter);
+				dwRwCapacity = CalcuteRwCapacity(driveLetter, dwMBytes, szTotalCapacity);
+				szFileSystem = GetFileSystem(driveLetter);
 				StartH2testw(driveLetter, szFileSystem, szTotalCapacity, dwRwCapacity);
-
 				m_nRunh2Count++;
 			}
 		}
 		dwMask <<= 1;
 	}
-
 }
 
 CString CProcessH2testw::GetFileSystem(TCHAR driveLetter)

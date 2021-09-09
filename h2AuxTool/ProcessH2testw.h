@@ -15,6 +15,7 @@ public:
 	CProcessH2testw(void);
 	~CProcessH2testw();
 	void DeleteAllh2Files();
+	void PerformH2RW(DWORD dwMBytes, TCHAR driveLetter);
 	void PerformH2RW(DWORD dwMBytes);
 	void CloseH2testw();
 	BOOL IsValidUsbDrive(TCHAR driveLetter);

@@ -65,5 +65,8 @@
     <Image Include="res\h2AuxTool.ico">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\Removable Media.ico">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

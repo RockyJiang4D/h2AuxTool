@@ -17,11 +17,9 @@
 
 // Ch2AuxToolDlg 对话框
 
-
-
 Ch2AuxToolDlg::Ch2AuxToolDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_H2AUXTOOL_DIALOG, pParent)
-	, m_szUsbDriveList(_T(""))
+	, m_szValueUsbDrives(_T(""))
 	, m_nCapacity(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -30,13 +28,14 @@ Ch2AuxToolDlg::Ch2AuxToolDlg(CWnd* pParent /*=nullptr*/)
 void Ch2AuxToolDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_USB_DRIVE_LIST, m_szUsbDriveList);
+	DDX_Text(pDX, IDC_LABEL_USB_DRIVES, m_szValueUsbDrives);
 	DDX_Text(pDX, IDC_EDIT_CAPACITY, m_nCapacity);
 	DDV_MinMaxInt(pDX, m_nCapacity, 0, INT_MAX);
 	DDX_Control(pDX, IDC_EDIT_CAPACITY, m_ctrlCapacityEdit);
 	DDX_Control(pDX, IDC_CHECK_TOP_SHOW, m_ctrlTopShow);
 	DDX_Control(pDX, IDC_RADIO_ALL_CAPACITY, m_ctrlAllCapacity);
-	DDX_Control(pDX, IDC_RADIO2_PARTIAL_CAPACITY, m_ctrlPartialCapacity);
+	DDX_Control(pDX, IDC_RADIO_PARTIAL_CAPACITY, m_ctrlPartialCapacity);
+	DDX_Control(pDX, IDC_LIST_USB_DRIVES, m_ctrlUsbDrives);
 }
 
 BEGIN_MESSAGE_MAP(Ch2AuxToolDlg, CDialogEx)
@@ -48,6 +47,8 @@ BEGIN_MESSAGE_MAP(Ch2AuxToolDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_DELETE_H2_FILE, &Ch2AuxToolDlg::OnBnClickedButtonDeleteH2File)
 	ON_BN_CLICKED(IDC_CHECK_TOP_SHOW, &Ch2AuxToolDlg::OnBnClickedCheckTopShow)
 	ON_EN_SETFOCUS(IDC_EDIT_CAPACITY, &Ch2AuxToolDlg::OnSetfocusEditCapacity)
+	ON_WM_DESTROY()
+	ON_NOTIFY(NM_CLICK, IDC_LIST_USB_DRIVES, &Ch2AuxToolDlg::OnClickListUsbDrives)
 END_MESSAGE_MAP()
 
 
@@ -72,8 +73,21 @@ BOOL Ch2AuxToolDlg::OnInitDialog()
 	m_ctrlAllCapacity.SetCheck(TRUE);
 	m_ctrlPartialCapacity.SetCheck(FALSE);
 
+	m_imgList.Create(32, 32, ILC_COLOR32 | ILC_MASK, 1, 0);//第一个‘1’代表加载图标的个数，加载多个图标也可
+	m_imgList.Add(AfxGetApp()->LoadIconW(IDI_ICON_REMOVABLE_DRIVE));
+
+	DWORD dwStyle = m_ctrlUsbDrives.GetExtendedStyle();
+	dwStyle |= LVS_EX_CHECKBOXES;
+	m_ctrlUsbDrives.SetExtendedStyle(dwStyle);
+	//m_ctrlUsbDrives.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP | LVS_EX_INFOTIP  | LVS_EX_CHECKBOXES  | LVS_EX_SUBITEMIMAGES);
+	m_ctrlUsbDrives.SetImageList(&m_imgList, LVSIL_SMALL);
+
+	m_ctrlTopShow.SetCheck(TRUE);
+
+	this->OnBnClickedCheckTopShow();
+
 	ProcessDevChange();
-	
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -130,9 +144,11 @@ TCHAR Ch2AuxToolDlg::FirstDriveFromMask(ULONG unitmask)
 
 void Ch2AuxToolDlg::ProcessDevChange()
 {
-	m_szUsbDriveList = L"";
+	m_szValueUsbDrives = L"";
 	DWORD dwDrives = GetLogicalDrives();
 	DWORD dwMask = 1;
+
+	m_ctrlUsbDrives.DeleteAllItems();
 
 	for (int i = 0; i < 26; i++)
 	{
@@ -142,13 +158,21 @@ void Ch2AuxToolDlg::ProcessDevChange()
 			if (m_cProcessH2.IsValidUsbDrive(driveLetter))
 			{
 				CString szTmp;
-				szTmp.Format(L"%c:\\  ", driveLetter);
-				m_szUsbDriveList += szTmp;
+				szTmp.Format(L"  %c:", driveLetter);
+				m_szValueUsbDrives += szTmp;
+				m_szValueUsbDrives += L"\\  ";
+				UpdateData(FALSE);
+
+				m_ctrlUsbDrives.InsertItem(m_ctrlUsbDrives.GetItemCount(), szTmp, 0);
 			}
 		}
 		dwMask <<= 1;
 	}
-	UpdateData(FALSE);
+	
+	for (int i = 0; i < m_ctrlUsbDrives.GetItemCount(); i++)
+	{
+		m_ctrlUsbDrives.SetCheck(i, TRUE);
+	}
 }
 
 BOOL Ch2AuxToolDlg::OnDeviceChange(UINT wParam, DWORD_PTR lParam)
@@ -205,7 +229,6 @@ void Ch2AuxToolDlg::OnBnClickedButtonRunH2()
 	
 	DWORD	dwMBytes;
 
-	
 	CString szH2Path = _T(".\\h2testw.exe");
 	DWORD dwAttrib = GetFileAttributes(szH2Path);
 	if (!((INVALID_FILE_ATTRIBUTES != dwAttrib)
@@ -214,8 +237,8 @@ void Ch2AuxToolDlg::OnBnClickedButtonRunH2()
 		AfxMessageBox(L"H2testw.exe does not exist");
 		return;
 	}
-	((CButton*)GetDlgItem(IDC_BUTTON_RUN_H2))->EnableWindow(FALSE);
 
+	((CButton*)GetDlgItem(IDC_BUTTON_RUN_H2))->EnableWindow(FALSE);
 	m_cProcessH2.DeleteAllh2Files();
 
 	if (m_ctrlPartialCapacity.GetCheck())
@@ -228,7 +251,15 @@ void Ch2AuxToolDlg::OnBnClickedButtonRunH2()
 		dwMBytes = CProcessH2testw::MAX_NUM_OF_MBYTES;
 	}
 
-	m_cProcessH2.PerformH2RW(dwMBytes);
+	for (int i = 0; i < m_ctrlUsbDrives.GetItemCount(); i++)
+	{
+		if (m_ctrlUsbDrives.GetCheck(i))
+		{
+			CString szDriveStr = m_ctrlUsbDrives.GetItemText(i, 0);//(行，列)
+			szDriveStr = szDriveStr.Trim();
+			m_cProcessH2.PerformH2RW(dwMBytes, szDriveStr.GetAt(0));
+		}
+	}
 
 	((CButton*)GetDlgItem(IDC_BUTTON_RUN_H2))->EnableWindow(TRUE);
 }
@@ -247,6 +278,7 @@ void Ch2AuxToolDlg::OnBnClickedButtonCloseH2()
 void Ch2AuxToolDlg::OnBnClickedButtonDeleteH2File()
 {
 	// TODO: 在此添加控件通知处理程序代码
+
 	((CButton*)GetDlgItem(IDC_BUTTON_DELETE_H2_FILE))->EnableWindow(FALSE);
 	m_cProcessH2.DeleteAllh2Files();
 	((CButton*)GetDlgItem(IDC_BUTTON_DELETE_H2_FILE))->EnableWindow(TRUE);
@@ -275,4 +307,30 @@ void Ch2AuxToolDlg::OnSetfocusEditCapacity()
 	m_ctrlAllCapacity.SetCheck(FALSE);
 
 	((CEdit*)GetDlgItem(IDC_EDIT_CAPACITY))->SetSel(0, -1); //EDIT控件中的内容全部选中
+}
+
+
+void Ch2AuxToolDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+
+	// TODO: 在此处添加消息处理程序代码
+
+	m_imgList.Detach();
+}
+
+
+void Ch2AuxToolDlg::OnClickListUsbDrives(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+	NMLISTVIEW* pNMListView = (NMLISTVIEW*)pNMHDR;
+	int nItemNo = pNMListView->iItem;
+	if (-1 != nItemNo)
+	{
+		BOOL bChecked = m_ctrlUsbDrives.GetCheck(nItemNo);
+		m_ctrlUsbDrives.SetCheck(nItemNo, !bChecked);
+	}
 }

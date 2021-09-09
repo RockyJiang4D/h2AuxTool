@@ -36,7 +36,7 @@ public:
 	afx_msg void OnBnClickedButtonCloseH2();
 	afx_msg void OnBnClickedButtonDeleteH2File();
 	afx_msg void OnBnClickedCheckTopShow();
-	CString m_szUsbDriveList;
+	CString m_szValueUsbDrives;
 	int m_nCapacity;
 	CButton m_ctrlTopShow;
 public:
@@ -46,8 +46,13 @@ public:
 private:
 	CProcessH2testw  m_cProcessH2;
 	TCHAR FirstDriveFromMask(ULONG unitmask);
+	
 
 	void ProcessDevChange();
 public:
 	afx_msg void OnSetfocusEditCapacity();
+	CListCtrl m_ctrlUsbDrives;
+	CImageList m_imgList;
+	afx_msg void OnDestroy();
+	afx_msg void OnClickListUsbDrives(NMHDR* pNMHDR, LRESULT* pResult);
 };
