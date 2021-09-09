@@ -168,11 +168,29 @@ void Ch2AuxToolDlg::ProcessDevChange()
 		}
 		dwMask <<= 1;
 	}
-	
-	for (int i = 0; i < m_ctrlUsbDrives.GetItemCount(); i++)
+
+	int nCount = m_ctrlUsbDrives.GetItemCount();
+
+	if (nCount > 0)
 	{
-		m_ctrlUsbDrives.SetCheck(i, TRUE);
+		((CButton*)GetDlgItem(IDC_BUTTON_RUN_H2))->EnableWindow(TRUE);
+		((CButton*)GetDlgItem(IDC_BUTTON_DELETE_H2_FILE))->EnableWindow(TRUE);
+		((CButton*)GetDlgItem(IDC_BUTTON_CLOSE_H2))->EnableWindow(TRUE);
+		m_ctrlUsbDrives.ShowWindow(SW_SHOW);
+		for (int i = 0; i < nCount; i++)
+		{
+			m_ctrlUsbDrives.SetCheck(i, TRUE);
+		}
 	}
+	else
+	{
+		((CButton*)GetDlgItem(IDC_BUTTON_RUN_H2))->EnableWindow(FALSE);
+		((CButton*)GetDlgItem(IDC_BUTTON_DELETE_H2_FILE))->EnableWindow(FALSE);
+		((CButton*)GetDlgItem(IDC_BUTTON_CLOSE_H2))->EnableWindow(FALSE);
+		m_ctrlUsbDrives.ShowWindow(SW_HIDE);
+	}
+	
+
 }
 
 BOOL Ch2AuxToolDlg::OnDeviceChange(UINT wParam, DWORD_PTR lParam)
