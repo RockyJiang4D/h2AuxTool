@@ -26,8 +26,8 @@ public:
 	void CloseH2testw();
 	BOOL IsValidUsbDrive(TCHAR driveLetter);
 protected:
-	static BOOL CALLBACK EnumWindowsCB_CloseH2(HWND hwnd, DWORD lParam);
-	static BOOL CALLBACK EnumWindowsCB_FindWin(HWND hwnd, DWORD lParam);
+	static BOOL CALLBACK EnumWindowsCB_CloseH2(HWND hwnd, LPARAM lParam);
+	static BOOL CALLBACK EnumWindowsCB_FindWin(HWND hwnd, LPARAM lParam);
 private:
 	UINT	m_nRunh2Count;
 	HWND m_hwnd;

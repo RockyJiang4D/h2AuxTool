@@ -546,20 +546,46 @@ BOOL CProcessH2testw::GetDriveTypeByBus(TCHAR driveLetter, WORD* type)
 }
 
 
-BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_CloseH2(HWND hwnd, DWORD lParam)
+BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_CloseH2(HWND hwnd, LPARAM lParam)
 {
 	// TODO: 在此处添加实现代码.
-	// 窗口是否可视
-	if (!::IsWindowVisible(hwnd))
+	//窗口是否可视
+	if (!IsWindowVisible(hwnd))
 	{
 		return TRUE;
 	}
 
-	// 窗口是否可激活
-	if (!::IsWindowEnabled(hwnd))
+	//窗口是否可激活
+	if (!IsWindowEnabled(hwnd))
 	{
 		return TRUE;
 	}
+
+	//窗口是否 WS_POPUP 与 WS_CAPTION 共存
+		//一些可切换的窗体同时具有 WS_POPUP 与 WS_CAPTION，因而有 WS_POPUP 却无 WS_CAPTION 的应被过滤
+	//据 Spy++ 观察，符合如 OneNote TrayIcon 等程序可通过此方式过滤
+	LONG gwl_style = GetWindowLong(hwnd, GWL_STYLE);
+	if ((gwl_style & WS_POPUP) && !(gwl_style & WS_CAPTION))
+	{
+		return TRUE;
+	}
+
+#if 0
+	//窗口是否具有父窗口？
+	HWND hParent = (HWND)GetWindowLong(hwnd, GWL_HWNDPARENT);
+	//父窗口是否可激活？
+	//据 Spy++ 观察，如“运行”对话框等被应列入列表的程序有一个隐藏的，具有 WS_DISABLED 的父窗口
+	if (IsWindowEnabled(hParent))
+	{
+		return TRUE;
+	}
+
+	//父窗口是否可视？
+	if (IsWindowVisible(hParent))
+	{
+		return TRUE;
+	}
+#endif
 
 	// Do something
 	TCHAR szTitle[255];
@@ -583,7 +609,7 @@ BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_CloseH2(HWND hwnd, DWORD lParam)
 }
 
 
-BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_FindWin(HWND hwnd, DWORD lParam)
+BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_FindWin(HWND hwnd, LPARAM lParam)
 {
 	if (NULL == lParam)
 	{
@@ -594,18 +620,44 @@ BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_FindWin(HWND hwnd, DWORD lParam)
 	szTitleCn = ((ENUM_FIND_WIN_PARAM*)lParam)->szTitleCn;
 	szTitleEn = ((ENUM_FIND_WIN_PARAM*)lParam)->szTitleEn;
 	pCProcessH2testw = ((ENUM_FIND_WIN_PARAM*)lParam)->pThis;
-	
-	// 窗口是否可视
-	if (!::IsWindowVisible(hwnd))
+
+	//窗口是否可视
+	if (!IsWindowVisible(hwnd))
 	{
 		return TRUE;
 	}
 
-	// 窗口是否可激活
-	if (!::IsWindowEnabled(hwnd))
+	//窗口是否可激活
+	if (!IsWindowEnabled(hwnd))
 	{
 		return TRUE;
 	}
+
+	//窗口是否 WS_POPUP 与 WS_CAPTION 共存
+		//一些可切换的窗体同时具有 WS_POPUP 与 WS_CAPTION，因而有 WS_POPUP 却无 WS_CAPTION 的应被过滤
+	//据 Spy++ 观察，符合如 OneNote TrayIcon 等程序可通过此方式过滤
+	LONG gwl_style = GetWindowLong(hwnd, GWL_STYLE);
+	if ((gwl_style & WS_POPUP) && !(gwl_style & WS_CAPTION))
+	{
+		return TRUE;
+	}
+
+#if 0
+	//窗口是否具有父窗口？
+	HWND hParent = (HWND)GetWindowLong(hwnd, GWL_HWNDPARENT);
+	//父窗口是否可激活？
+	//据 Spy++ 观察，如“运行”对话框等被应列入列表的程序有一个隐藏的，具有 WS_DISABLED 的父窗口
+	if (IsWindowEnabled(hParent))
+	{
+		return TRUE;
+	}
+
+	//父窗口是否可视？
+	if (IsWindowVisible(hParent))
+	{
+		return TRUE;
+	}
+#endif
 
 	// Do something
 	TCHAR szTemp[255];
