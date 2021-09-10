@@ -5,6 +5,7 @@
 CProcessH2testw::CProcessH2testw(void)
 {
 	m_nRunh2Count = 0;
+	m_hwnd = NULL;
 }
 
 CProcessH2testw::~CProcessH2testw()
@@ -129,7 +130,23 @@ DWORD CProcessH2testw::CalcuteRwCapacity(TCHAR driveLetter, DWORD dwMBytes, CStr
 
 void CProcessH2testw::CloseH2testw()
 {
-	EnumWindows((WNDENUMPROC)EnumWindowsCallback, 0);
+	EnumWindows((WNDENUMPROC)EnumWindowsCB_CloseH2, 0);
+}
+
+HWND	CProcessH2testw::FindH2WindowEx(CString szTitleEn, CString szTitleCn)
+{
+	ENUM_FIND_WIN_PARAM enumFindWinParam;
+
+	enumFindWinParam.pThis = this;
+	enumFindWinParam.szTitleCn = szTitleCn;
+	enumFindWinParam.szTitleEn = szTitleEn;
+
+	m_hwnd = NULL;
+	if (!EnumWindows((WNDENUMPROC)EnumWindowsCB_FindWin, (LPARAM)&enumFindWinParam))
+	{
+
+	}
+	return m_hwnd;
 }
 
 HWND	CProcessH2testw::FindH2Window(CString szTitleEn, CString szTitleCn)
@@ -401,7 +418,11 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 		}
 
 		CString szProgressWinTitle;// = L"H2testw | Progress";
-		hProgressWnd = FindH2Window(L"H2testw | Progress", L"H2testw | 进度");
+#if 1
+		hProgressWnd = FindH2Window(L"H2testw | Progress", L"H2testw | 进度      ");
+#else
+		hProgressWnd = FindH2WindowEx(L"H2testw | Progress", L"H2testw | 进度");
+#endif
 		if (NULL == hProgressWnd)
 		{
 			bRet = FALSE;
@@ -525,7 +546,7 @@ BOOL CProcessH2testw::GetDriveTypeByBus(TCHAR driveLetter, WORD* type)
 }
 
 
-BOOL  CALLBACK CProcessH2testw::EnumWindowsCallback(HWND hwnd, DWORD lParam)
+BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_CloseH2(HWND hwnd, DWORD lParam)
 {
 	// TODO: 在此处添加实现代码.
 	// 窗口是否可视
@@ -539,10 +560,11 @@ BOOL  CALLBACK CProcessH2testw::EnumWindowsCallback(HWND hwnd, DWORD lParam)
 	{
 		return TRUE;
 	}
+
 	// Do something
 	TCHAR szTitle[255];
 	//setLocale(LC_ALL, L"");
-	::GetWindowText(hwnd, (LPWSTR)szTitle, sizeof(TCHAR)*255);
+	::GetWindowText(hwnd, (LPWSTR)szTitle, 255);
 
 	CString szTemp;
 	szTemp.Format(L"%s", szTitle);
@@ -557,6 +579,64 @@ BOOL  CALLBACK CProcessH2testw::EnumWindowsCallback(HWND hwnd, DWORD lParam)
 		pWnd->SendMessage(WM_CLOSE);
 		Sleep(100);
 	}
+	return TRUE;
+}
+
+
+BOOL  CALLBACK CProcessH2testw::EnumWindowsCB_FindWin(HWND hwnd, DWORD lParam)
+{
+	if (NULL == lParam)
+	{
+		return TRUE;
+	}
+	CString szTitleEn, szTitleCn;
+	CProcessH2testw* pCProcessH2testw;
+	szTitleCn = ((ENUM_FIND_WIN_PARAM*)lParam)->szTitleCn;
+	szTitleEn = ((ENUM_FIND_WIN_PARAM*)lParam)->szTitleEn;
+	pCProcessH2testw = ((ENUM_FIND_WIN_PARAM*)lParam)->pThis;
+	
+	// 窗口是否可视
+	if (!::IsWindowVisible(hwnd))
+	{
+		return TRUE;
+	}
+
+	// 窗口是否可激活
+	if (!::IsWindowEnabled(hwnd))
+	{
+		return TRUE;
+	}
+
+	// Do something
+	TCHAR szTemp[255];
+	//setLocale(LC_ALL, L"");
+	::GetWindowText(hwnd, (LPWSTR)szTemp, 255);
+
+	CString szTitle;
+	szTitle.Format(L"%s", szTemp);
+
+	szTitle = szTitle.Trim();
+	szTitleCn = szTitleCn.Trim();
+	szTitleEn = szTitleEn.Trim();
+
+	OutputDebugString(L"#");
+	OutputDebugString(szTitle);
+	OutputDebugString(L"# ");
+	OutputDebugString(L"#");
+	OutputDebugString(szTitleCn);
+	OutputDebugString(L"# ");
+	OutputDebugString(L"#");
+	OutputDebugString(szTitleEn);
+	OutputDebugString(L"#");
+	OutputDebugString(L"\r\n");
+
+	if ((szTitle.Find(szTitleCn) > 0) 
+		|| (szTitle.Find(szTitleEn) > 0))
+	{
+		pCProcessH2testw->m_hwnd = hwnd;
+		return FALSE;
+	}
+	
 	return TRUE;
 }
 
