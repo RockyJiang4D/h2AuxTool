@@ -24,7 +24,7 @@ void CProcessH2testw::PerformH2RW(DWORD dwMBytes, TCHAR driveLetter)
 		dwRwCapacity = CalcuteRwCapacity(driveLetter, dwMBytes, szTotalCapacity);
 		szFileSystem = GetFileSystem(driveLetter);
 		StartH2testw(driveLetter, szFileSystem, szTotalCapacity, dwRwCapacity);
-		m_nRunh2Count++;
+		m_nRunh2Count = ((m_nRunh2Count + 1) % 4);
 	}
 }
 
@@ -49,7 +49,7 @@ void CProcessH2testw::PerformH2RW(DWORD dwMBytes)
 				dwRwCapacity = CalcuteRwCapacity(driveLetter, dwMBytes, szTotalCapacity);
 				szFileSystem = GetFileSystem(driveLetter);
 				StartH2testw(driveLetter, szFileSystem, szTotalCapacity, dwRwCapacity);
-				m_nRunh2Count++;
+				m_nRunh2Count = ((m_nRunh2Count+1)%4);
 			}
 		}
 		dwMask <<= 1;
@@ -280,7 +280,6 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 	TCHAR	szText[255] = L"M:";
 	//	TCHAR	szTmp[255] = L"\0";
 
-
 	szH2MainWinTitle.Format(L"H2testw - %c: - ", driveLetter);
 	szH2MainWinTitle += szFileSystem;
 	szH2MainWinTitle += szTotalCapacity;
@@ -319,7 +318,7 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 			&pi)				//   Pointer   to   PROCESS_INFORMATION   structure.   
 			)
 		{
-			OutputDebugString(L"Fail to create H2testw procress!\r\n");
+			OutputDebugString(L"Fail to create H2testw process!\r\n");
 			bRet = FALSE;
 			break;
 		}
@@ -334,19 +333,13 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 		}
 
 		::SetForegroundWindow(hH2Wnd);
+
 		::SetWindowText(hH2Wnd, szH2MainWinTitle);
-		RECT rect = { 0 };
-		GetWindowRect(hH2Wnd, &rect);
-		int		iWinWidth = rect.right - rect.left;
-		int		iWinHeight = rect.bottom - rect.top;
-		int 	iScrWidth = GetSystemMetrics(SM_CXSCREEN); //获取屏幕水平分辨率
-		int 	iScrHeight = GetSystemMetrics(SM_CYSCREEN); //获取屏幕垂直分辨率
-		int		iRowCount = iScrHeight / (iWinHeight + 100);
-		int 	iColCount = iScrWidth / (iWinWidth + 20);
-		MoveWindow(hH2Wnd, (m_nRunh2Count % iColCount) * (iWinWidth + 20), ((m_nRunh2Count % (iColCount * iRowCount)) / iColCount) * (iWinHeight + 100), iWinWidth, iWinHeight, TRUE);
+
 		WaitWinReady(hH2Wnd);
 		//		Sleep(500);
 
+		ShowWindow(hH2Wnd, SW_MINIMIZE);
 
 		BlockInput(TRUE);
 
@@ -432,6 +425,25 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 		TCHAR szWinText[100];
 		::GetWindowText(hProgressWnd, szWinText, sizeof(szWinText) / sizeof(TCHAR));
 		szProgressWinTitle = szWinText;
+
+		int 	iScrWidth = GetSystemMetrics(SM_CXSCREEN); //获取屏幕水平分辨率
+		int 	iScrHeight = GetSystemMetrics(SM_CYSCREEN); //获取屏幕垂直分辨率
+		RECT	appDlgRect = { 0 };
+		GetWindowRect(AfxGetApp()->GetMainWnd()->GetSafeHwnd(), &appDlgRect);
+		int		iAppDlgWidth = appDlgRect.right - appDlgRect.left;
+		int		iAppDlgHeight = appDlgRect.bottom - appDlgRect.top;
+
+		RECT	winRect = { 0 };
+		GetWindowRect(hProgressWnd, &winRect);
+		int iWinWidth = winRect.right - winRect.left;
+		int iWinHeight = winRect.bottom - winRect.top;
+
+		int iRow = (m_nRunh2Count / 2);
+		int iCol = (m_nRunh2Count % 2);
+
+		int iWinLeft = appDlgRect.left + iAppDlgWidth/2 + (iCol-1) * iWinWidth + 10 * ((0 == iCol)?(-1):1);
+		int iWinTop = appDlgRect.top + (iRow-1) * iWinHeight + iRow * iAppDlgHeight + 10 * ((0 == iRow) ? (-1) : 1);
+		MoveWindow(hProgressWnd, iWinLeft, iWinTop, iWinWidth, iWinHeight, TRUE);
 
 		CString szTemp;
 		szTemp.Format(L" - %c: - ", driveLetter);
