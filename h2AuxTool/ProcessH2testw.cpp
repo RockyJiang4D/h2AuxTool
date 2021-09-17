@@ -422,9 +422,7 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 			break;
 		}
 
-		TCHAR szWinText[100];
-		::GetWindowText(hProgressWnd, szWinText, sizeof(szWinText) / sizeof(TCHAR));
-		szProgressWinTitle = szWinText;
+		::SetForegroundWindow(hProgressWnd);
 
 		int 	iScrWidth = GetSystemMetrics(SM_CXSCREEN); //获取屏幕水平分辨率
 		int 	iScrHeight = GetSystemMetrics(SM_CYSCREEN); //获取屏幕垂直分辨率
@@ -444,6 +442,10 @@ BOOL	CProcessH2testw::StartH2testw(TCHAR driveLetter, CString szFileSystem, CStr
 		int iWinLeft = appDlgRect.left + iAppDlgWidth/2 + (iCol-1) * iWinWidth + 10 * ((0 == iCol)?(-1):1);
 		int iWinTop = appDlgRect.top + (iRow-1) * iWinHeight + iRow * iAppDlgHeight + 10 * ((0 == iRow) ? (-1) : 1);
 		MoveWindow(hProgressWnd, iWinLeft, iWinTop, iWinWidth, iWinHeight, TRUE);
+
+		TCHAR szWinText[100];
+		::GetWindowText(hProgressWnd, szWinText, sizeof(szWinText) / sizeof(TCHAR));
+		szProgressWinTitle = szWinText;
 
 		CString szTemp;
 		szTemp.Format(L" - %c: - ", driveLetter);
